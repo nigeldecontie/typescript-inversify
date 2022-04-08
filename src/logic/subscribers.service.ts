@@ -1,5 +1,6 @@
 import { injectable } from 'inversify'
 import { SubscribersRepository } from '@data/subscribers.repository'
+import { MissingSubscriberException } from '@logic/exceptions'
 import {
   CreateSubscriberDto,
   SingleSubscriberDto,
@@ -22,7 +23,7 @@ export class SubscribersService {
     )
 
     if (!foundSubscriber) {
-      throw new Error(`No subscriber found with the given id.`)
+      throw new MissingSubscriberException()
     }
 
     return SubscriberDto.from(foundSubscriber)

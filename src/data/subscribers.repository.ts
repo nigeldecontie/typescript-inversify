@@ -11,7 +11,7 @@ export class SubscribersRepository {
   }
 
   async findOne(id: string) {
-    return this._dbContext.subscriber.findById(id)
+    return this._dbContext.subscriber.findById(id).catch(() => null)
   }
 
   async create(entity: Partial<ISubscriber>) {
@@ -23,8 +23,12 @@ export class SubscribersRepository {
       payload._id
     )
 
-    foundSubscriber.name = payload.name
-    foundSubscriber.channel = payload.channel
+    if (!foundSubscriber) {
+      throw new Error('subscriber does not exist')
+    }
+
+    if (payload.name) foundSubscriber.name = payload.name
+    if (payload.channel) foundSubscriber.channel = payload.channel
 
     return foundSubscriber.save()
   }

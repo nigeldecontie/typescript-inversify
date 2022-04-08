@@ -1,4 +1,4 @@
-import express from 'express'
+import express, { Request, Response, NextFunction } from 'express'
 import { InversifyExpressServer } from 'inversify-express-utils'
 import { Container } from 'inversify'
 
@@ -8,6 +8,11 @@ import { SubscribersRepository } from '@data/subscribers.repository'
 import { SubscribersService } from '@logic/subscribers.service'
 
 import '@web/controllers/subscribers.controller'
+import {
+  MissingSubscriberException,
+  ValidationException,
+} from '@logic/exceptions'
+import { BaseHttpResponse } from '@web/lib/base-response'
 
 export class App extends Application {
   configureServices(container: Container): void | Promise<void> {
@@ -21,6 +26,22 @@ export class App extends Application {
     await _db.connect()
 
     const server = new InversifyExpressServer(this.container)
+
+    server.setErrorConfig((app) => {
+      app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+        if (err instanceof ValidationException) {
+          const response = BaseHttpResponse.failed(err.message, 419)
+          res.status(response.statusCode).json(response)
+        }
+
+        if (err instanceof MissingSubscriberException) {
+          const response = BaseHttpResponse.failed(err.message, 404)
+          res.status(response.statusCode).json(response)
+        }
+
+        return next()
+      })
+    })
 
     server.setConfig((app) => {
       app.use(express.json())
