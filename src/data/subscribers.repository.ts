@@ -1,5 +1,6 @@
 import { injectable } from 'inversify'
-import { DBService } from './db.service'
+import { DBService } from './db.context'
+import { ISubscriber } from './subscribers.model'
 
 @injectable()
 export class SubscribersRepository {
@@ -13,21 +14,19 @@ export class SubscribersRepository {
     return this._dbContext.subscriber.findById(id)
   }
 
-  async create({
-    name,
-    subscribedToChannel,
-  }: {
-    name: string
-    subscribedToChannel: string
-  }) {
-    return this._dbContext.subscriber.create({ name, subscribedToChannel })
+  async create(entity: Partial<ISubscriber>) {
+    return this._dbContext.subscriber.create(entity)
   }
 
-  async updateOne(subscriber: any, payload: any) {
-    subscriber.name = payload.name
-    subscriber.subcribedToChannel = payload.subscribedToChannel
+  async updateOne(payload: Partial<ISubscriber>) {
+    const foundSubscriber = await this._dbContext.subscriber.findById(
+      payload._id
+    )
 
-    return subscriber.save()
+    foundSubscriber.name = payload.name
+    foundSubscriber.channel = payload.channel
+
+    return foundSubscriber.save()
   }
 
   async deleteOne(id: string) {

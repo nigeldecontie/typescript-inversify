@@ -1,7 +1,7 @@
 import { injectable } from 'inversify'
 import mongoose from 'mongoose'
 
-import { subscribersModel } from './subscribers.model'
+import { ISubscriber, subscribersModel } from '@data/subscribers.model'
 
 @injectable()
 export class DBService {
@@ -13,7 +13,7 @@ export class DBService {
       useUnifiedTopology: true,
     })
 
-    console.log('connected to DB')
+    console.log('Connected to DB')
   }
 
   get subscriber() {
