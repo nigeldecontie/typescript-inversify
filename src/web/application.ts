@@ -1,18 +1,22 @@
 import express, { Request, Response, NextFunction } from 'express'
+import morgan from 'morgan'
 import { InversifyExpressServer } from 'inversify-express-utils'
 import { Container } from 'inversify'
 
-import { DBService } from '@data/db.context'
-import { Application } from './lib/abstract-application'
-import { SubscribersRepository } from '@data/subscribers.repository'
-import { SubscribersService } from '@logic/subscribers.service'
-
 import '@web/controllers/subscribers.controller'
+import { DBService } from '@data/db.context'
+import { SubscribersRepository } from '@data/subscribers.repository'
+import { SubscribersService } from '@logic/services/subscribers.service'
+import { BaseHttpResponse } from '@web/lib/base-response'
+
+import {
+  AbstractApplicationOptions,
+  Application,
+} from '@web/lib/abstract-application'
 import {
   MissingSubscriberException,
   ValidationException,
 } from '@logic/exceptions'
-import { BaseHttpResponse } from '@web/lib/base-response'
 
 export class App extends Application {
   configureServices(container: Container): void | Promise<void> {
@@ -20,7 +24,8 @@ export class App extends Application {
     container.bind(SubscribersRepository).toSelf()
     container.bind(SubscribersService).toSelf()
   }
-  async setup() {
+
+  async setup(options: AbstractApplicationOptions) {
     const _db = this.container.get(DBService)
 
     await _db.connect()
@@ -31,12 +36,17 @@ export class App extends Application {
       app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
         if (err instanceof ValidationException) {
           const response = BaseHttpResponse.failed(err.message, 419)
-          res.status(response.statusCode).json(response)
+          return res.status(response.statusCode).json(response)
         }
 
         if (err instanceof MissingSubscriberException) {
           const response = BaseHttpResponse.failed(err.message, 404)
-          res.status(response.statusCode).json(response)
+          return res.status(response.statusCode).json(response)
+        }
+
+        if (err instanceof Error) {
+          const response = BaseHttpResponse.failed(err.message, 500)
+          return res.status(response.statusCode).json(response)
         }
 
         return next()
@@ -45,6 +55,7 @@ export class App extends Application {
 
     server.setConfig((app) => {
       app.use(express.json())
+      app.use(morgan(options.morgan.mode))
     })
 
     const app = server.build()

@@ -7,7 +7,7 @@ import {
   httpDelete,
 } from 'inversify-express-utils'
 
-import { SubscribersService } from '@logic/subscribers.service'
+import { SubscribersService } from '@logic/services/subscribers.service'
 import {
   CreateSubscriberDto,
   SingleSubscriberDto,
